@@ -1,0 +1,51 @@
+name: Flutter Android Build
+
+on:
+  # 每次推送到 main 分支時觸發
+  push:
+    branches:
+      - main
+  # 手動觸發
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.22.x' # 建議使用穩定版本
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Check for formatting and analysis issues
+        run: |
+          flutter format --no-check-exits .
+          flutter analyze
+
+      # 由於沒有簽名金鑰，這裡只編譯未簽名的 debug APK
+      # 如果需要 release APK，需要配置 keystore
+      - name: Build Debug APK
+        run: flutter build apk --debug --split-per-abi
+
+      - name: Upload Debug APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: taiwan_stock_app_debug_apk
+          path: build/app/outputs/apk/debug/app-*-debug.apk
+          retention-days: 7
+
+      - name: Build Web (可選)
+        run: flutter build web
+
+      - name: Upload Web Artifact (可選)
+        uses: actions/upload-artifact@v4
+        with:
+          name: taiwan_stock_app_web
+          path: build/web
+          retention-days: 7
